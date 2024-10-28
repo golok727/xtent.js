@@ -24,6 +24,9 @@ jobs:
         run: pnpm ci:version:canary
 
       - name: Publish to npm
-        run: pnpm ci:publish:canary
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc
+          pnpm config set npmAuthToken ${{ secrets.NPM_TOKEN }}
+          pnpm ci:publish:canary
+          rm ".npmrc"
+          pnpm config delete npmAuthToken
