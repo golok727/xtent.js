@@ -41,7 +41,7 @@ jobs:
       - uses: ./.github/actions/setup
 
       - name: Publish to npm
-        run: pnpm ci:publishk
+        run: pnpm ci:publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
