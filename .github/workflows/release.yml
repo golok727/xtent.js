@@ -41,9 +41,7 @@ jobs:
       - uses: ./.github/actions/setup
 
       - name: Publish to npm
-        run: |
-          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc
-          pnpm config set npmAuthToken ${{ secrets.NPM_TOKEN }}
-          pnpm ci:publish
-          rm ".npmrc"
-          pnpm config delete npmAuthToken
+        run: pnpm ci:publishk
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
