@@ -47,6 +47,6 @@ jobs:
 
       - name: Publish to npm
         shell: bash
-        run: pnpm ci:publish
+        run: pnpm run ci:publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

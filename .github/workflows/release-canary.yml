@@ -23,12 +23,12 @@ jobs:
         run: cp ./.github/canary-changeset.md .changeset/
 
       - name: Update version
-        run: pnpm ci:version:canary
+        run: pnpm run ci:version:canary
 
         
       - name: Publish to npm
         shell: bash
-        run: pnpm ci:publish:canary
+        run: pnpm run ci:publish:canary
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 

@@ -7,10 +7,6 @@ runs:
       run: corepack enable
       shell: bash
     
-    - name: Install pnpm 
-      run: pnpm --version 
-      shell: bash
-    
     - name: Setup Node
       uses: actions/setup-node@v4
       with: 
@@ -18,13 +14,19 @@ runs:
         registry-url: 'https://registry.npmjs.org/'
         cache: pnpm
 
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with: 
+        version: 9
+        run_install: false
+
+    - name: Install Dependencies
+      run: pnpm install
+
     - name: Show versions
       run: |
         node --version 
         pnpm --version
       shell: bash
     
-    - name: Install  Dependencies
-      run: pnpm install --frozen-lockfile
-      shell: bash
       
