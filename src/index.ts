@@ -1,5 +1,2 @@
-export class Store {
-  add() {
-    return true;
-  }
-}
+export { Store } from './store';
+export { defineExtension } from './extension';

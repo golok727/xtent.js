@@ -1,10 +1,10 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ESNext"],
+    "lib": ["ESNext", "DOM"],
     "useDefineForClassFields": false,
 
-    "module": "Preserve",
+    "module": "ESNext",
     "moduleResolution": "Bundler",
 
     "stripInternal": true,
