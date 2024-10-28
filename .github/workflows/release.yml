@@ -47,10 +47,9 @@ jobs:
       - uses: ./.github/actions/setup
 
       - name: Publish to npm
-        shell: bash
-        run: pnpm run ci:publish
-     
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{secrets.NPM_TOKEN}}" >> .npmrc
 
-    env:
-      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          pnpm run ci:publish
+
+          rm ".npmrc"

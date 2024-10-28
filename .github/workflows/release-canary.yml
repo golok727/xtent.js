@@ -24,11 +24,11 @@ jobs:
 
       - name: Update version
         run: pnpm run ci:version:canary
-
-        
+      
       - name: Publish to npm
-        shell: bash
-        run: pnpm run ci:publish:canary
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{secrets.NPM_TOKEN}}" >> .npmrc
 
+          pnpm run ci:publish
+
+          rm ".npmrc"
