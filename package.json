@@ -22,9 +22,9 @@
 		"lint:staged": "biome check --write --staged --no-errors-on-unmatched",
 		"ci:lint": "biome ci--formatter-enabled=false --changed --no-errors-on-unmatched",
 		"ci:version": "changeset version && pnpm install --no-frozen-lockfile",
-		"ci:publish": "pnpm build && pnpm publish --tag latest --access public",
+		"ci:publish": "pnpm build && pnpm publish --tag latest --access public --no-git-checks",
 		"ci:version:canary": "changeset version --snapshot canary && pnpm install --no-frozen-lockfile",
-		"ci:publish-canary": "pnpm build && pnpm publish --tag canary --access public",
+		"ci:publish-canary": "pnpm build && pnpm publish --tag canary --access public --no-git-checks",
 		"postinstall": "husky"
 	},
 	"keywords": [
