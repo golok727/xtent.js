@@ -18,7 +18,7 @@ jobs:
       - uses: ./.github/actions/setup
 
       - name: Add changeset
-        run: cp .github/canary-changeset.md .changeset/
+        run: cp ./.github/canary-changeset.md .changeset/
 
       - name: Update version
         run: pnpm ci:version:canary
