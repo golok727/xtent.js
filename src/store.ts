@@ -1,3 +1,4 @@
+import { ExtensionProvider } from './provider';
 import type { ExtensionFactory, ExtensionId, ExtensionVariant } from './types';
 
 export class Store {
@@ -23,6 +24,10 @@ export class Store {
 
   addExtensionFactory() {
     //
+  }
+
+  createProvider() {
+    return new ExtensionProvider(this);
   }
 }
 
