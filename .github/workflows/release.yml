@@ -45,14 +45,8 @@ jobs:
 
       - uses: ./.github/actions/setup
 
-      - name: Setup npmrc
-        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc
-
-      - name: Setup pnpm config
-        run: pnpm config set store-dir $PNPM_CACHE_FOLDER
-      
       - name: Publish to npm
-        run: | 
-          pnpm ci:publish
-          rm .npmrc
-          pnpm config delete store-dir $PNPM_CACHE_FOLDER
+        shell: bash
+        run: pnpm ci:publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
