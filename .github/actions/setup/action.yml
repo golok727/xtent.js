@@ -14,14 +14,11 @@ runs:
         registry-url: 'https://registry.npmjs.org/'
         cache: pnpm
 
-    - name: Install pnpm
-      uses: pnpm/action-setup@v4
-      with: 
-        version: 9
-        run_install: false
+    - uses: pnpm/action-setup@v4
 
     - name: Install Dependencies
-      run: pnpm install
+      run: pnpm install --frozen-lockfile
+      shell: bash
 
     - name: Show versions
       run: |
