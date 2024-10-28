@@ -38,8 +38,10 @@ jobs:
 
       - uses: ./.github/actions/setup
 
-      - name: Publish to npm
-        run: | 
-          echo ${{ secrets.NPM_TOKEN }}
-          pnpm ci:publish
-
+      - name: Publish to NPM
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc
+          yarn config set npmAuthToken ${{ secrets.NPM_TOKEN }}
+          yarn ci:publish
+          rm ".npmrc"
+          yarn config unset npmAuthToken
