@@ -1,0 +1,32 @@
+name: Release Canary
+
+on: 
+  workflow_dispatch: 
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+permissions: 
+  id-token: write
+
+jobs:
+  release-canary: 
+    name: Publish Canary release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup
+
+      - name: Add changeset
+        run: cp .github/canary-changeset.md .changeset/
+
+      - name: Update version
+        run: pnpm ci:version:canary
+
+      - name: Publish to npm
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc
+          pnpm config set npmAuthToken ${{ secrets.NPM_TOKEN }}
+          pnpm ci:publish:canary
+          rm ".npmrc"
+          pnpm config delete npmAuthToken

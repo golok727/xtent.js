@@ -4,11 +4,21 @@ on:
   push:
     branches:
       - main
-    
+    paths-ignore: 
+        - 'scripts/**'
+        - '**.md' 
+        - '.vscode'
+        - '.husky'
+
   pull_request:
     branches: 
       - main  
+  workflow_dispatch: 
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+  
 jobs: 
   install-deps: 
     name: Install dependencies and Build
