@@ -1,0 +1,45 @@
+.DS_Store
+.idea
+.vscode/*
+.zed
+.helix/*
+!.vscode/tasks.json
+!.vscode/settings.template.json
+!.vscode/launch.template.json
+!.vscode/extensions.json
+node_modules
+target
+*.tgz
+
+
+
+# code coverage
+.nyc_output
+.coverage
+
+# Build out
+dist/
+build/
+
+temp
+tsconfig.tsbuildinfo
+tsconfig.*.tsbuildinfo
+.next
+next-env.d.ts
+
+
+__screenshots__/
+
+
+.ki/cache
+
+# Yarn v2
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+__mock__
