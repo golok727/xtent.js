@@ -42,14 +42,11 @@ jobs:
       - uses: actions/checkout@v4
         with: 
           fetch-depth: 0
-          
 
       - uses: ./.github/actions/setup
 
       - name: Publish to npm
-        run: |
-          echo "//registry.npmjs.org/:_authToken=${{secrets.NPM_TOKEN}}" >> .npmrc
+        run:  pnpm run ci:publish
 
-          pnpm run ci:publish
-
-          rm ".npmrc"
+        env: 
+          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
