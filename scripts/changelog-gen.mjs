@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process';
-import { appendFileSync, existsSync, readdirSync } from 'node:fs';
+import { appendFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 // https://github.com/conventional-changelog/commitlint/tree/master/@commitlint/config-conventional#type-enum
@@ -27,16 +27,23 @@ function getChangelogFile() {
     process.exit(1);
   }
 
-  const dirContents = readdirSync(CHANGE_SET_DIR, {
+  // Get all markdown files matching the regex in the .changeset directory
+  const changelogFiles = readdirSync(CHANGE_SET_DIR, {
     withFileTypes: true,
     encoding: 'utf-8',
+  }).filter(item => item.isFile() && CHANGE_LOG_MD_REGEX.test(item.name));
+
+  if (changelogFiles.length === 0) return null;
+
+  // Sort files by creation time (most recent first)
+  const sortedFiles = changelogFiles.sort((a, b) => {
+    const aStat = statSync(path.join(CHANGE_SET_DIR, a.name));
+    const bStat = statSync(path.join(CHANGE_SET_DIR, b.name));
+    return bStat.ctimeMs - aStat.ctimeMs;
   });
 
-  const found = dirContents.find(
-    item => item.isFile() && CHANGE_LOG_MD_REGEX.test(item.name)
-  );
-  if (!found) return null;
-  return path.join(found.parentPath, found.name);
+  // Return the most recently created file
+  return path.join(CHANGE_SET_DIR, sortedFiles[0].name);
 }
 
 function processLog(log, groups) {
