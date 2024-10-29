@@ -13,10 +13,7 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": [
-    "dist",
-    "src"
-  ],
+  "files": ["dist", "src"],
   "scripts": {
     "lint": "biome lint --write",
     "build": "pnpm type-check && pkgroll --minify",
@@ -30,12 +27,10 @@
     "ci:publish": "pnpm publish -r --tag latest --no-git-checks",
     "ci:version:canary": "changeset version --snapshot canary && pnpm install --no-frozen-lockfile",
     "ci:publish:canary": "pnpm -r publish -r --tag canary --no-git-checks",
-    "postinstall": "husky"
+    "postinstall": "husky",
+    "create:changeset": "changeset && node ./scripts/changelog-gen.mjs"
   },
-  "keywords": [
-    "extension-system",
-    "plugins"
-  ],
+  "keywords": ["extension-system", "plugins"],
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@changesets/cli": "^2.27.9",
