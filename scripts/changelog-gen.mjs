@@ -46,7 +46,15 @@ function getChangelogFile() {
   return path.join(CHANGE_SET_DIR, sortedFiles[0].name);
 }
 
+/**
+ *
+ * @param {string} log the multi line log message to process
+ * @param {Record<string, string[]>} groups the groups record
+ * @returns {boolean} processing completed ? true : false
+ */
 function processLog(log, groups) {
+  if (log === '') return true;
+
   const lines = log.split('\n');
 
   for (const line of lines) {
