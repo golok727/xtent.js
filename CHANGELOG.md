@@ -1,5 +1,11 @@
 # xtent.js
 
+## 0.0.2
+
+### Patch Changes
+
+- 7345a15: Some patches
+
 ## 0.0.1
 
 ### Patch Changes
