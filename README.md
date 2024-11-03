@@ -17,18 +17,18 @@ npm install xtent.js
 
 ## Basic Usage
 
-Here’s a simple example to show how `xtend.js` can be used in an application.
+Here’s a simple example to show how `xtent.js` can be used in an application.
 
 ### Example: Managing Systems
 
 In this example, we'll manage two simple systems: `Logger` and `UserService`. The `UserService` depends on the `Logger`.
 
 ```ts
-import { Store, entity } from 'xtend.js';
+import { Store, entity } from 'xtent.js';
 
 // Define entities
-const LoggerId = entity('Logger');
-const UserServiceId = entity('UserService');
+const LoggerId = entity<Logger>('Logger');
+const UserServiceId = entity<UserService>('UserService');
 
 // Define a Logger system
 class Logger {
@@ -70,3 +70,4 @@ console.log('User:', user);
 User: { id: 1, name: 'John Doe' }
 ```
 
+Comprehensive example coming soon 🙇
