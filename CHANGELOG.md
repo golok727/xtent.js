@@ -1,5 +1,12 @@
 # xtent.js
 
+## 1.0.1
+
+### Patch Changes
+
+- f37848e: ## Other
+  - fix readme
+
 ## 1.0.0
 
 ### Major Changes
