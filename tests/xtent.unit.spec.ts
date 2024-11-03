@@ -1,34 +1,37 @@
 import { describe, expect, test } from 'vitest';
 import { entity } from '../src';
+import { isEntityIdentifier } from '../src/entity';
 
 abstract class System {
-  init() {
-    console.log('init');
-  }
-  dispose() {
-    console.log('init');
-  }
+  abstract init(): void;
+  abstract dispose(): void;
 }
 
-export const RendererSystem = entity<System>('Systems');
-export const ContextSystem = RendererSystem('Context');
-export const BackgroundSystem = RendererSystem('Background');
+export const AnySystem = entity<System>('System');
+export const ContextSystemId = AnySystem('ContextSystem');
+export const GraphicsSystemId = AnySystem('GraphicsSystem');
 
 describe('Store', () => {
   test('insert', () => {
     expect(1).toBe(1);
   });
 
+  test('isEntityIdentifier', () => {
+    expect(isEntityIdentifier(AnySystem)).toBe(true);
+    expect(isEntityIdentifier(ContextSystemId)).toBe(true);
+    expect(isEntityIdentifier({ thing: 2 })).toBe(false);
+  });
+
   test('id', () => {
     const thing = entity('thing');
     expect(thing).toBeTypeOf('function');
 
-    expect(thing.type).toBe('thing');
+    expect(thing.kind).toBe('thing');
     expect(thing.variant).toBe('default');
 
     const variant = thing('variant');
     expect(variant).toBeTypeOf('function');
-    expect(variant.type).toBe('thing');
+    expect(variant.kind).toBe('thing');
     expect(variant.variant).toBe('variant');
   });
 });
