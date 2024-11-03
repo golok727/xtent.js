@@ -1,42 +1,33 @@
-import { ExtensionProvider } from './provider';
-import type { ExtensionFactory, ExtensionId, ExtensionVariant } from './types';
+import { BasicContext } from './context';
+import type { EntityFactory, EntityVariant } from './types';
 
 export class Store {
-  /*
-  {
-    'scope' => {
-    "type": {
-    "variant": Factory
-    ...
-    } 
-    ...
-    }
-  }
-   */
-  items = new Map<
+  extensions = new Map<
     string,
-    Map<string, Map<ExtensionVariant, ExtensionFactory>>
+    Map<string, Map<EntityVariant, EntityFactory>>
   >();
 
-  get insert() {
-    return new EditStore(this).insert;
+  get add() {
+    return new EditStore(this).add;
   }
 
-  addExtensionFactory() {
+  addFactory() {
     //
   }
 
-  createProvider() {
-    return new ExtensionProvider(this);
+  createContext() {
+    return new BasicContext(this);
   }
 }
 
 class EditStore {
   constructor(public store: Store) {}
 
-  insert<T>(id: ExtensionId<T>, factory: unknown) {
-    console.log(id);
-    console.log(factory);
-    return true;
+  add() {
+    //
+  }
+
+  bind() {
+    //
   }
 }

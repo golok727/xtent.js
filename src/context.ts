@@ -1,6 +1,6 @@
 import type { Store } from './store';
 
-export abstract class Provider {
+export abstract class Context {
   get<T>(): T {
     throw new Error('not implemented');
   }
@@ -14,7 +14,7 @@ export abstract class Provider {
   }
 }
 
-export class ExtensionProvider extends Provider {
+export class BasicContext extends Context {
   constructor(public store: Store) {
     super();
   }

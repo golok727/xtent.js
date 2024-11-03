@@ -1,5 +1,18 @@
 import { describe, expect, test } from 'vitest';
-import { defineExtension } from '../src';
+import { entity } from '../src';
+
+abstract class System {
+  init() {
+    console.log('init');
+  }
+  dispose() {
+    console.log('init');
+  }
+}
+
+export const RendererSystem = entity<System>('Systems');
+export const ContextSystem = RendererSystem('Context');
+export const BackgroundSystem = RendererSystem('Background');
 
 describe('Store', () => {
   test('insert', () => {
@@ -7,7 +20,7 @@ describe('Store', () => {
   });
 
   test('id', () => {
-    const thing = defineExtension('thing');
+    const thing = entity('thing');
     expect(thing).toBeTypeOf('function');
 
     expect(thing.type).toBe('thing');
