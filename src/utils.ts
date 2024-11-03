@@ -1,8 +1,5 @@
 import type { Context } from './context';
-import type { EntityFactoryFn } from './types';
-
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-type Any = any;
+import type { Any, EntityFactoryFn } from './types';
 
 export function isConstructor(v: unknown) {
   try {
@@ -51,7 +48,8 @@ export function buildFactoryFunction(
     if (isConstructor(cstr)) {
       return new cstr(...args);
     } else {
-      return cstr(...args);
+      // todo allow (cx ,...deps) => T
+      return cstr(cx);
     }
   };
 }

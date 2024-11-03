@@ -58,7 +58,7 @@ class EntityPool {
 export class EntityNotFoundError extends Error {
   constructor(ent: Entity<Any>, scope: string) {
     super();
-    this.message = `Entity kind = ${ent.kind}, variant = ${ent.variant} at scope: ${scope}`;
+    this.message = `Entity kind = ${ent.kind}, variant = ${ent.variant} at scope: '${scope}'`;
   }
 }
 
