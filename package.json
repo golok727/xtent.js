@@ -1,6 +1,6 @@
 {
   "name": "xtent.js",
-  "version": "0.0.2",
+  "version": "1.0.0",
   "description": "A extension system for javascript",
   "author": "golok727",
   "license": "MIT",
@@ -13,7 +13,10 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": ["dist", "src"],
+  "files": [
+    "dist",
+    "src"
+  ],
   "scripts": {
     "lint": "biome lint --write",
     "build": "pnpm type-check && pkgroll --minify",
@@ -30,7 +33,10 @@
     "postinstall": "husky",
     "create:changeset": "changeset && node ./scripts/changelog-gen.mjs"
   },
-  "keywords": ["extension-system", "plugins"],
+  "keywords": [
+    "extension-system",
+    "plugins"
+  ],
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@changesets/cli": "^2.27.9",

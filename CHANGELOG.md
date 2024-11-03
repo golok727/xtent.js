@@ -1,5 +1,24 @@
 # xtent.js
 
+## 1.0.0
+
+### Major Changes
+
+- f81bfcb: ## Chore
+  - chore: fix changelog-gen script infinite loop
+  ## Ci
+  - ci: some refactoring
+  ## Feat
+  - feat: almost complete
+  - feat: add script for changelog generation
+  ## Fix
+  - fix: changelog generate
+  ## Refactor
+  - refactor: renaming
+  ## Other
+  - update readme
+  - a thing was not working
+
 ## 0.0.2
 
 ### Patch Changes
