@@ -1,5 +1,13 @@
 # xtent.js
 
+## 1.0.2
+
+### Patch Changes
+
+- 3d7a2c7: Override is here
+  ## Feat
+  - feat: add override in store
+
 ## 1.0.1
 
 ### Patch Changes
