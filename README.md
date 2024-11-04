@@ -5,7 +5,6 @@ This library provides a lightweight and easy-to-use dependency injection system 
 ## Features
 
 - **Simple API** for managing dependencies and entities
-- **Lazy Initialization** of systems and services
 - **Contextual Lookups** to get entities when needed
 - **Automatic Dependency Resolution** between entities
 
@@ -19,55 +18,66 @@ npm install xtent.js
 
 Here’s a simple example to show how `xtent.js` can be used in an application.
 
-### Example: Managing Systems
-
-In this example, we'll manage two simple systems: `Logger` and `UserService`. The `UserService` depends on the `Logger`.
+### Example: Plugin systems
 
 ```ts
-import { Store, entity } from 'xtent.js';
+    interface Database {
+      type: string;
+    }
 
-// Define entities
-const LoggerId = entity<Logger>('Logger');
-const UserServiceId = entity<UserService>('UserService');
+    const AnyDatabase = entity<Database>('AnyDatabase');
 
-// Define a Logger system
-class Logger {
-  log(message: string) {
-    console.log('[LOG]:', message);
-  }
-}
+    abstract class DatabasePlugin implements Database {
+      abstract type: string;
 
-// Define a UserService that depends on Logger
-class UserService {
-  constructor(private logger: Logger) {}
+      static register(store: Store) {
+        store.add(this as unknown as { new (): Database });
+        store.override(AnyDatabase, cx => cx.get(this));
+      }
+    }
 
-  getUser() {
-    this.logger.log('Fetching user data...');
-    return { id: 1, name: 'John Doe' };
-  }
-}
+    class MockDatabase extends DatabasePlugin {
+      type = 'MOCK';
+    }
 
-// Create a store to manage our systems
-const store = new Store();
+    class SqlDatabase extends DatabasePlugin {
+      type = 'SQL';
+    }
 
-// Add systems to the store with dependency injection
-store.use(LoggerId, Logger);
-store.add(UserService, [LoggerId]);
+    class NoSqlDatabase extends DatabasePlugin {
+      type = 'NOSQL';
+    }
 
-// Create a context to access systems
-const cx = store.context();
+    interface Plugin {
+      register(store: Store): void;
+    }
 
-// Access and use the UserService system
-const userService = cx.get(UserServiceId);
-const user = userService.getUser();
-console.log('User:', user);
-```
+    class App {
+      static defaultPlugins: Plugin[] = [MockDatabase];
 
-### Output
+      cx: Context;
 
-```
-[LOG]: Fetching user data...
-User: { id: 1, name: 'John Doe' }
+      constructor(plugins: Plugin[] = []) {
+        const store = new Store();
+
+        const allPlugins: Plugin[] = [...App.defaultPlugins, ...plugins];
+
+        for (const plugin of allPlugins) {
+          plugin.register(store);
+        }
+
+        this.cx = store.context();
+      }
+
+      get database() {
+        return this.cx.get(AnyDatabase);
+      }
+    }
+
+    console.log(new App().database.type) // MOCK
+    console.log(new App([SqlDatabase]).database.type) // SQL
+    console.log(new App([SqlDatabase, NoSqlDatabase]).database.type) // NOSQL
+
 ```
 
 Comprehensive example coming soon 🙇

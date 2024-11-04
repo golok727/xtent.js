@@ -1,5 +1,12 @@
 import { describe, expect, test } from 'vitest';
-import { Store, entity } from '../src';
+import {
+  type Context,
+  EntityNotFoundError,
+  MissingDependencyError,
+  Store,
+  entity,
+} from '../src';
+import { CircularDependencyError } from '../src/context';
 import { isEntityIdentifier } from '../src/entity';
 
 export const AnySystem = entity<System>('System');
@@ -58,6 +65,72 @@ describe('Store', () => {
     expect(variant.variant).toBe('variant');
   });
 
+  describe('Plugin systems', () => {
+    interface Database {
+      type: string;
+    }
+
+    const AnyDatabase = entity<Database>('AnyDatabase');
+
+    abstract class DatabasePlugin implements Database {
+      abstract type: string;
+
+      static register(store: Store) {
+        store.add(this as unknown as { new (): Database });
+        store.override(AnyDatabase, cx => cx.get(this));
+      }
+    }
+
+    class MockDatabase extends DatabasePlugin {
+      type = 'MOCK';
+    }
+
+    class SqlDatabase extends DatabasePlugin {
+      type = 'SQL';
+    }
+
+    class NoSqlDatabase extends DatabasePlugin {
+      type = 'NOSQL';
+    }
+
+    interface Plugin {
+      register(store: Store): void;
+    }
+
+    class App {
+      static defaultPlugins: Plugin[] = [MockDatabase];
+
+      cx: Context;
+
+      constructor(plugins: Plugin[] = []) {
+        const store = new Store();
+
+        const allPlugins: Plugin[] = [...App.defaultPlugins, ...plugins];
+
+        for (const plugin of allPlugins) {
+          plugin.register(store);
+        }
+
+        this.cx = store.context();
+      }
+
+      get database() {
+        return this.cx.get(AnyDatabase);
+      }
+    }
+
+    test('should default to mock database', () => {
+      expect(new App().database.type).toEqual('MOCK');
+    });
+
+    test('use a another database', () => {
+      expect(new App([NoSqlDatabase]).database.type).toEqual('NOSQL');
+      expect(new App([NoSqlDatabase, SqlDatabase]).database.type).toEqual(
+        'SQL'
+      );
+    });
+  });
+
   describe('Store.use', () => {
     interface KeyBinding {
       key: string;
@@ -102,6 +175,42 @@ describe('Store', () => {
       expect(editor.hasChanges).toBe(false);
     });
   });
+
+  describe('Store.override', () => {
+    interface Database {
+      type: string;
+    }
+
+    class SqlDatabase implements Database {
+      type = 'SQL';
+    }
+
+    class NoSqlDatabase implements Database {
+      type = 'NOSQL';
+    }
+
+    class App {
+      constructor(public database: Database) {}
+    }
+
+    test('override should override the service in the store', () => {
+      const store = new Store();
+      const Database = entity<Database>('Database');
+
+      store.add(SqlDatabase);
+      store.add(NoSqlDatabase);
+
+      store.use(Database, cx => cx.get(SqlDatabase));
+
+      store.add(App, [Database]);
+
+      expect(store.context().get(App).database.type).toBe('SQL');
+      store.override(Database, cx => cx.get(NoSqlDatabase));
+
+      expect(store.context().get(App).database.type).toBe('NOSQL');
+    });
+  });
+
   describe('Store.add', () => {
     class Thing {
       name = 'Thing';
@@ -158,6 +267,7 @@ describe('Store', () => {
       expect(renderer.specs).toEqual({ width: 100, height: 100 });
     });
   });
+
   describe('Store.context.getAll()', () => {
     test('should return all the objects', () => {
       const store = new Store();
@@ -243,9 +353,7 @@ describe('Store', () => {
       const store = new Store();
 
       const cx = store.context();
-      expect(() => cx.get(ContextSystem.id)).toThrow(
-        "Entity kind = System, variant = ContextSystem at scope: ''"
-      );
+      expect(() => cx.get(ContextSystem.id)).toThrowError(EntityNotFoundError);
     });
 
     test('should throw if dependency not available', () => {
@@ -258,7 +366,7 @@ describe('Store', () => {
 
       store.add(Thing, [Dep]);
       const cx = store.context();
-      expect(() => cx.get(Thing)).toThrow(/Missing dependency/);
+      expect(() => cx.get(Thing)).toThrow(MissingDependencyError);
     });
 
     test('should throw if cycle found', () => {
@@ -275,7 +383,7 @@ describe('Store', () => {
       store.add(Dep, [Thing]);
 
       const cx = store.context();
-      expect(() => cx.get(Thing)).toThrow(/Circular dependency found/);
+      expect(() => cx.get(Thing)).toThrow(CircularDependencyError);
     });
 
     test('should should pool objects', () => {

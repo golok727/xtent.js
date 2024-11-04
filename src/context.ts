@@ -1,4 +1,4 @@
-import { normalizeEntityIdentifier } from './entity';
+import { normalizeEntityIdentifier, stringifyEntity } from './entity';
 import type { Store } from './store';
 import type { Entity, EntityLike, EntityScope, EntityVariant } from './types';
 
@@ -55,10 +55,31 @@ class EntityPool {
     return variant;
   }
 }
+
 export class EntityNotFoundError extends Error {
-  constructor(ent: Entity<Any>, scope: string) {
-    super();
-    this.message = `Entity kind = ${ent.kind}, variant = ${ent.variant} at scope: '${scope}'`;
+  constructor(
+    public ent: Entity<unknown>,
+    scope: string
+  ) {
+    super(`${stringifyEntity(ent)} not found at scope: '${scope}'`);
+  }
+}
+
+export class CircularDependencyError extends Error {
+  constructor(caught: Entity<unknown>, stack: Array<Entity<unknown>>) {
+    const cir =
+      stack.map(stringifyEntity).join(' -> ') +
+      ' -> ' +
+      stringifyEntity(caught);
+    super(cir);
+  }
+}
+
+export class MissingDependencyError extends Error {
+  constructor(missing: Entity<unknown>, forEnt: Entity<Any>) {
+    super(
+      `Missing Dependency ${stringifyEntity(missing)} for ${stringifyEntity(forEnt)}`
+    );
   }
 }
 
@@ -84,8 +105,7 @@ class Resolver extends Context {
         return createEntity(next);
       } catch (err) {
         if (err instanceof EntityNotFoundError) {
-          throw new Error(`Missing dependency...
-            Missing:\n ${err.message}`);
+          throw new MissingDependencyError(err.ent, ent);
         }
         throw err;
       }
@@ -99,10 +119,7 @@ class Resolver extends Context {
     if (
       this.stack.find(i => i.kind === ent.kind && i.variant === ent.variant)
     ) {
-      const map = (ent: Entity<T>) => `${ent.kind}:${ent.variant}`;
-      const cir = this.stack.map(map).join(' -> ') + ' -> ' + map(ent);
-
-      throw new Error(`Circular dependency found:\n${cir}`);
+      throw new CircularDependencyError(ent, this.stack);
     }
 
     return new Resolver(this.context, this.level + 1, [...this.stack, ent]);
@@ -131,8 +148,10 @@ class Resolver extends Context {
             return createEntity(next);
           } catch (err) {
             if (err instanceof EntityNotFoundError) {
-              throw new Error(`Missing dependency...
-            Missing:\n ${err.message}`);
+              throw new MissingDependencyError(err.ent, {
+                kind: ent.kind,
+                variant,
+              } as Entity<T>);
             }
             throw err;
           }

@@ -47,6 +47,10 @@ export class Store {
     return new EditStore(this).use;
   }
 
+  get override() {
+    return new EditStore(this).override;
+  }
+
   get scope() {
     return new EditStore(this).scope;
   }
@@ -55,8 +59,8 @@ export class Store {
     const store = new Store();
     for (const [scope, entities] of this.registry) {
       const s = new Map();
-      for (const [identifier, variants] of entities) {
-        s.set(identifier, new Map(variants));
+      for (const [ent, variants] of entities) {
+        s.set(ent, new Map(variants));
       }
       store.registry.set(scope, s);
     }
@@ -160,6 +164,34 @@ class EditStore {
       });
     } else {
       this.store.insert(ent, anyItem, { scope: this._scope });
+    }
+    return this;
+  };
+
+  override = <
+    E extends Entity<Any>,
+    Item extends
+      | EntityFactoryFn<Interface>
+      | Interface
+      | AnyAbstractConstructor<Interface>,
+    Interface = InferEntityType<E>,
+    D extends Item extends AnyAbstractConstructor<Interface>
+      ? Dependencies<ConstructorParameters<Item>>
+      : [] = Item extends AnyAbstractConstructor<Interface>
+      ? Dependencies<ConstructorParameters<Item>>
+      : [],
+  >(
+    ent: E,
+    anyItem: Item,
+    ...[deps]: D extends [] ? [] : [D]
+  ): this => {
+    if (anyItem instanceof Function) {
+      this.store.factory(ent, buildFactoryFunction(anyItem, deps), {
+        scope: this._scope,
+        override: true,
+      });
+    } else {
+      this.store.insert(ent, anyItem, { scope: this._scope, override: true });
     }
     return this;
   };

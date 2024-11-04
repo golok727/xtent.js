@@ -42,3 +42,7 @@ export function createEntityFromConstructor<T>(
 ) {
   return entity<T>(`${cstr.name}`);
 }
+
+export function stringifyEntity<T>(ent: Entity<T>) {
+  return `Entity(${ent.kind}::${ent.variant})`;
+}
