@@ -22,7 +22,7 @@ Here’s a simple example to show how `xtent.js` can be used in an application.
 ### Example: Plugin systems
 
 ```ts
-    import { Store, type Context } from "xtent.js"
+    import { Store, entity, type Context } from "xtent.js"
 
     interface Database {
       type: string;
