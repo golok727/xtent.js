@@ -108,7 +108,7 @@ export class Store {
     return new Map(this.registry.get(scope.stringify())?.get(ent.kind));
   }
 
-  context(scope = STORE_ROOT_SCOPE, parent: Context | null = null) {
+  context(scope = STORE_ROOT_SCOPE, parent: Context | null = null): Context {
     return new BaseContext(this, scope, parent);
   }
 }

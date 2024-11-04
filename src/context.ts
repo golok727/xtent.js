@@ -1,14 +1,18 @@
 import { normalizeEntityIdentifier, stringifyEntity } from './entity';
 import type { Store } from './store';
-import type { Entity, EntityLike, EntityScope, EntityVariant } from './types';
-
-// biome-ignore lint/suspicious/noExplicitAny: Thanks biome
-type Any = any;
+import type {
+  Any,
+  Entity,
+  EntityLike,
+  EntityScope,
+  EntityVariant,
+} from './types';
 
 export interface ResolverOptions {
   sameScope?: boolean;
   optional?: boolean;
 }
+
 export abstract class Context {
   abstract store: Store;
   get<T>(ent: EntityLike<T>, options?: ResolverOptions): T {
@@ -20,7 +24,7 @@ export abstract class Context {
 
   getAll<T>(
     ent: EntityLike<T>,
-    options?: ResolverOptions
+    options?: ResolverOptions & { exclude?: EntityVariant[] }
   ): Map<EntityVariant, T> {
     return this.resolveAll<T>(normalizeEntityIdentifier(ent), {
       ...options,
@@ -39,9 +43,10 @@ export abstract class Context {
 
   abstract resolveAll<T>(
     ent: Entity<T>,
-    options?: ResolverOptions
+    options?: ResolverOptions & { exclude?: EntityVariant[] }
   ): Map<EntityVariant, T>;
 }
+
 class EntityPool {
   pool = new Map<string, Map<EntityVariant, Any>>();
 
@@ -112,32 +117,30 @@ class Resolver extends Context {
     });
   }
 
-  private next<T>(ent: Entity<T>) {
-    const level = this.level + 1;
-    if (level > 100) throw new Error('Max recursion limit reached');
-
-    if (
-      this.stack.find(i => i.kind === ent.kind && i.variant === ent.variant)
-    ) {
-      throw new CircularDependencyError(ent, this.stack);
-    }
-
-    return new Resolver(this.context, this.level + 1, [...this.stack, ent]);
-  }
-
   resolveAll<T>(
     ent: Entity<T>,
-    { sameScope = false, optional = false }: ResolverOptions = {}
+    {
+      sameScope = false,
+      optional = false,
+      exclude = [],
+    }: ResolverOptions & { exclude?: EntityVariant[] } = {}
   ): Map<EntityVariant, T> {
     const entFactories = this.context.store.getAll(ent, this.context.scope);
+
     if (entFactories.size === 0) {
       if (this.context.parent && !sameScope) {
-        return this.context.parent.getAll(ent, { sameScope, optional });
+        return this.context.parent.getAll(ent, {
+          sameScope,
+          optional,
+          exclude,
+        });
       }
       return new Map();
     }
 
     const res = new Map<string, T>();
+
+    for (const e of exclude) entFactories.delete(e);
 
     for (const [variant, createEntity] of entFactories) {
       const created = this.context.pool.getOrInsert(
@@ -163,7 +166,21 @@ class Resolver extends Context {
     return res;
   }
 
+  private next<T>(ent: Entity<T>) {
+    const level = this.level + 1;
+    if (level > 100) throw new Error('Max recursion limit reached');
+
+    if (
+      this.stack.find(e => e.kind === ent.kind && e.variant === ent.variant)
+    ) {
+      throw new CircularDependencyError(ent, this.stack);
+    }
+
+    return new Resolver(this.context, this.level + 1, [...this.stack, ent]);
+  }
+
   store: Store = this.context.store;
+
   constructor(
     public readonly context: BaseContext,
     public readonly level = 0,
@@ -172,6 +189,7 @@ class Resolver extends Context {
     super();
   }
 }
+
 export class BaseContext extends Context {
   resolve<T>(ent: Entity<T>, options?: ResolverOptions): T {
     return new Resolver(this).resolve(ent, options) as T;
@@ -179,7 +197,7 @@ export class BaseContext extends Context {
 
   resolveAll<T>(
     ent: Entity<T>,
-    options?: ResolverOptions
+    options?: ResolverOptions & { exclude?: EntityVariant[] }
   ): Map<EntityVariant, T> {
     return new Resolver(this).resolveAll(ent, options);
   }

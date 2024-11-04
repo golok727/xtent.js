@@ -8,10 +8,36 @@ import {
 } from '../src';
 import { CircularDependencyError } from '../src/context';
 import { isEntityIdentifier } from '../src/entity';
+import type { InferEntityType } from '../src/types';
 
 export const AnySystem = entity<System>('System');
 export const ContextSystemId = AnySystem('ContextSystem');
 export const GraphicsSystemId = AnySystem('GraphicsSystem');
+
+// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+function mergeDeep<T = any, U = any>(target: T, source: U): T & U {
+  const isObject = (obj: unknown) => obj && typeof obj === 'object';
+
+  if (!isObject(target) || !isObject(source)) {
+    return source as T & U;
+  }
+
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  Object.keys(source as any).forEach(key => {
+    const targetValue = target[key];
+    const sourceValue = source[key];
+
+    if (Array.isArray(targetValue) && Array.isArray(sourceValue)) {
+      target[key] = targetValue.concat(sourceValue);
+    } else if (isObject(targetValue) && isObject(sourceValue)) {
+      target[key] = mergeDeep(Object.assign({}, targetValue), sourceValue);
+    } else {
+      target[key] = sourceValue;
+    }
+  });
+
+  return target as T & U;
+}
 
 abstract class System {
   state = 0;
@@ -63,6 +89,145 @@ describe('Store', () => {
     expect(variant).toBeTypeOf('function');
     expect(variant.kind).toBe('thing');
     expect(variant.variant).toBe('variant');
+  });
+
+  describe('A code transformer', () => {
+    interface Config {
+      name: string;
+      outDir: string;
+      inputs: Record<string, string>;
+    }
+
+    interface Plugin {
+      register(store: Store): void;
+    }
+
+    const TransformerConfig = entity<Config>('BundlerConfig');
+    const ExtendConfig = entity<Partial<Config>>('ExtendConfig');
+
+    const InputTransformer = entity<{ transform(input: string): string }>(
+      'InputTransformer'
+    );
+
+    let key = 1;
+    function ConfigPlugin(config: Partial<Config>): Plugin {
+      return {
+        register(store) {
+          store.insert(ExtendConfig(`c-${key++}`), config);
+        },
+      };
+    }
+
+    function TransformerPlugin(
+      name: string,
+      transformer: InferEntityType<typeof InputTransformer>
+    ): Plugin {
+      return {
+        register(store) {
+          store.insert(InputTransformer(name), transformer);
+        },
+      };
+    }
+
+    function CodeTransformer(plugins: Plugin[] = []) {
+      const store = new Store();
+
+      const defaultConfig: Config = {
+        name: 'bundle',
+        outDir: 'dist',
+        inputs: Object.create(null),
+      };
+
+      store.use(TransformerConfig, cx => {
+        let mergedConfig = defaultConfig;
+
+        const allConfig = cx.getAll(ExtendConfig);
+
+        for (const c of allConfig.values()) {
+          mergedConfig = mergeDeep(mergedConfig, c) as Config;
+        }
+        return mergedConfig;
+      });
+
+      for (const plugin of plugins) {
+        plugin.register(store);
+      }
+
+      const cx = store.context();
+
+      return {
+        transform() {
+          let code = `
+          import {hello} from "thing"
+            
+          `;
+
+          for (const transformer of cx.getAll(InputTransformer).values()) {
+            code = transformer.transform(code);
+          }
+
+          return code;
+        },
+      };
+    }
+
+    test('should work', () => {
+      const plugins: Plugin[] = [
+        ConfigPlugin({ name: 'thing' }),
+        ConfigPlugin({ outDir: 'build' }),
+        ConfigPlugin({
+          inputs: { index: './src/index.ts', cli: './src/cli.ts' },
+        }),
+        ConfigPlugin({ inputs: { constants: './src/constants.ts' } }),
+        // ----
+        IndentationRemovePlugin(),
+        ShebangPlugin(),
+        LicensePlugin('MIT\n2024 Aadi'),
+      ];
+
+      function IndentationRemovePlugin() {
+        return TransformerPlugin('indentation removeer', {
+          transform(code) {
+            return code
+              .split('\n')
+              .map(c => c.trimStart())
+              .join('\n');
+          },
+        });
+      }
+
+      function ShebangPlugin() {
+        return TransformerPlugin('shebang', {
+          transform(code) {
+            return '#!/usr/bin/env node\n' + code;
+          },
+        });
+      }
+
+      function LicensePlugin(licence: string) {
+        return TransformerPlugin('licence', {
+          transform(code) {
+            const l = `/*\n${licence}\n*/`;
+            return l + '\n\n' + code;
+          },
+        });
+      }
+
+      const transformer = CodeTransformer(plugins);
+
+      const thing = `
+/*
+MIT
+2024 Aadi
+*/
+
+#!/usr/bin/env node
+
+import {hello} from "thing"
+`.trim();
+
+      expect(transformer.transform().trim()).toBe(thing);
+    });
   });
 
   describe('Plugin systems', () => {
