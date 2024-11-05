@@ -1,46 +1,45 @@
 // lib/plugins.ts
-import { entity } from "xtent.js";
-var ConfigPluginId = entity("Config");
-var TransformerPluginId = entity("TransformerPlugin");
+import { entity } from 'xtent.js';
+var ConfigPluginId = entity('Config');
+var TransformerPluginId = entity('TransformerPlugin');
 var key = 1;
 function ConfigPlugin(config) {
   return {
     register(store) {
       store.insert(ConfigPluginId(`${key++}`), config);
-    }
+    },
   };
 }
 function TransformPlugin(name, transformer) {
   return {
     register(store) {
       store.insert(TransformerPluginId(name), transformer);
-    }
+    },
   };
 }
 function ShebangPlugin({ include = [] } = {}) {
   const set = new Set(include);
-  return TransformPlugin("shebang", {
+  return TransformPlugin('shebang', {
     transform({ code, inputFilename }) {
-      if (!set.has(inputFilename))
-        return code;
-      return "#!/usr/bin/env node\n" + code;
-    }
+      if (!set.has(inputFilename)) return code;
+      return '#!/usr/bin/env node\n' + code;
+    },
   });
 }
 function LicensePlugin(license) {
-  return TransformPlugin("licence", {
+  return TransformPlugin('licence', {
     transform({ code }) {
       const l = `/*\n${license}\n*/`;
-      return l + "\n\n" + code;
-    }
+      return l + '\n\n' + code;
+    },
   });
 }
 // lib/transformer.ts
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import path from "node:path";
-import { Store } from "xtent.js";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
+import { Store } from 'xtent.js';
 function CodeTransformer(plugins = []) {
-  const store = new Store;
+  const store = new Store();
   store.use(ConfigPluginId, buildConfigFromPlugins);
   for (const plugin of plugins) {
     plugin.register(store);
@@ -49,26 +48,26 @@ function CodeTransformer(plugins = []) {
   return {
     build() {
       const files = loadFiles(cx);
-      const processed = files.map((mod) => processModule(mod, cx));
+      const processed = files.map(mod => processModule(mod, cx));
       for (const file of processed) {
         const outDirPath = path.dirname(file.outFilePath);
         if (!existsSync(outDirPath)) {
           mkdirSync(outDirPath, { recursive: true });
         }
-        writeFileSync(file.outFilePath, file.code, { encoding: "utf8" });
+        writeFileSync(file.outFilePath, file.code, { encoding: 'utf8' });
       }
-      return processed.map((f) => f.outFilePath);
-    }
+      return processed.map(f => f.outFilePath);
+    },
   };
 }
 function buildConfigFromPlugins(cx) {
   let mergedConfig = {
-    name: "xtent",
-    outDir: "dist",
-    inputs: Object.create(null)
+    name: 'xtent',
+    outDir: 'dist',
+    inputs: Object.create(null),
   };
   const allConfig = cx.getAll(ConfigPluginId, {
-    exclude: [ConfigPluginId.variant]
+    exclude: [ConfigPluginId.variant],
   });
   for (const c of allConfig.values()) {
     mergedConfig = mergeDeep(mergedConfig, c);
@@ -88,20 +87,24 @@ function loadFiles(cx) {
     const inputFilename = path.basename(inputFilePath);
     return {
       code: readFileSync(inputFilePath, {
-        encoding: "utf8"
+        encoding: 'utf8',
       }),
       inputFilename,
       inputFilePath,
-      outFilePath: path.resolve(process.cwd(), config.outDir, outFileName + ".myjs")
+      outFilePath: path.resolve(
+        process.cwd(),
+        config.outDir,
+        outFileName + '.myjs'
+      ),
     };
   });
 }
 function mergeDeep(target, source) {
-  const isObject = (obj) => obj !== null && typeof obj === "object";
+  const isObject = obj => obj !== null && typeof obj === 'object';
   if (!isObject(target) || !isObject(source)) {
     return source;
   }
-  Object.keys(source).forEach((key2) => {
+  Object.keys(source).forEach(key2 => {
     const targetValue = target[key2];
     const sourceValue = source[key2];
     if (Array.isArray(targetValue) && Array.isArray(sourceValue)) {
@@ -114,9 +117,4 @@ function mergeDeep(target, source) {
   });
   return target;
 }
-export {
-  ShebangPlugin,
-  LicensePlugin,
-  ConfigPlugin,
-  CodeTransformer
-};
+export { ShebangPlugin, LicensePlugin, ConfigPlugin, CodeTransformer };
