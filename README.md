@@ -68,11 +68,17 @@ renderer.render();  // Output: Rendering...
 Registers an already existing entity or object directly into the store.
 
 ```ts
-const config = { dbUrl: "database_url" };
+type Config = {dbUrl: string}; 
+
+const config = { dbUrl: "database_url" } satisfies Config;
+
+const AppConfigEntity = entity<Config>("AppConfigEntity");
+
 store.insert(AppConfigEntity, config);
 
 const cx = store.context();
 const appConfig = cx.get(AppConfigEntity); 
+
 console.log(appConfig.dbUrl);  // Output: "database_url"
 ```
 
@@ -127,7 +133,44 @@ store.scope(customScope).add(Renderer);
 - Adds a class as a factory method to the store, optionally providing dependencies that will be injected into the constructor.
 
 ```ts
-store.add(Renderer, [AppConfigEntity]);  // Renderer requires AppConfig as a dependency
+type RendererConfig = {width: number, height: number, antialias: boolean};
+
+interface System {
+  init(): void; 
+  dispose(): void; 
+}
+
+interface Pipeline {
+  id: PipeId, 
+  execute(): void;
+}
+
+
+// you can also name it same as the interface
+const ConfigEntity = entity<Config>("Config"); 
+const SystemEntity = entity<System>("System");
+const PipelineEntity = entity<Pipeline>("Pipeline");
+
+const Rendeer
+class Renderer {
+  constructor(public config: RendererConfig, public systems: System[], public pipes: Pipeline[])
+}
+
+store.add(Renderer, [ConfigEntity, [SystemEntity], [PinelineEntity]]);  // Renderer reeq
+// add all the config and systems too before getting context; 
+store.insert(ConfigEntity, { width: 800, height: 600})
+
+store.insert(SystemEntity("ContextSystem"), ContextSystemImpl)
+store.insert(SystemEntity("GraphicsSystem"), GraphicsSystemImpl)
+
+
+store.insert(PinelineEntity("GraphicsPipe"), GraphicsPipeImpl)
+
+store.get(Renderer).config.width === 800 // true
+store.get(Renderer).config.width === 600// true
+store.get(Renderer).systems.length === 2// true
+store.get(Renderer).pipes.length === 1// true
+
 ```
 
 #### 3. `use(Entity, implementation, ...dependencies)`
