@@ -115,21 +115,15 @@ const renderer = customCx.get(Renderer);  // Resolves the Renderer entity within
 
 ---
 
-## Advanced Entity Registration with `EditStore`
+## Advanced Entity Registration
 
-The `EditStore` class provides an enhanced interface for registering and managing entities. It extends the basic functionality of the `Store` class by allowing more control over entity scoping, dependency injection, and overriding behavior.
-
-### Key Methods in `EditStore`:
-
-#### 1. `scope(EntityScope)`
-- Sets a specific scope for registering entities.
 
 ```ts
 const customScope = scope("custom-scope");
 store.scope(customScope).add(Renderer);
 ```
 
-#### 2. `add(Class, ...dependencies)`
+#### 1. `add(Class, ...dependencies)`
 - Adds a class as a factory method to the store, optionally providing dependencies that will be injected into the constructor.
 
 ```ts
@@ -173,14 +167,14 @@ store.get(Renderer).pipes.length === 1// true
 
 ```
 
-#### 3. `use(Entity, implementation, ...dependencies)`
+#### 2. `use(Entity, implementation, ...dependencies)`
 - Registers an implementation of an entity, either as an object, a class, or a factory function. This method also allows for injecting dependencies into the implementation.
 
 ```ts
 store.use(DatabaseEntity, SqlDatabase, [AppConfigEntity]);
 ```
 
-#### 4. `override(Entity, implementation, ...dependencies)`
+#### 3. `override(Entity, implementation, ...dependencies)`
 - Overrides an existing entity with a new implementation or factory function. This is useful when you want to replace the default behavior of an entity at runtime.
 
 ```ts
