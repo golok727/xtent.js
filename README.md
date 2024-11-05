@@ -345,32 +345,94 @@ The following errors may be thrown during entity resolution:
 
 ---
 
-## Example: Plugin System
+## Example: [Plugin System](./examples/plugin-priority)
 
-Here’s an example of how `xtent.js` can be used to implement a plugin-based system with a modular design.
+Here’s an example of how `xtent.js` can be used to implement a plugin-based system with priority.
 
 ```ts
-import { Store, entity, type Context } from "xtent.js";
+import { Store, entity, type Context } from 'xtent.js';
 
 interface Database {
-  type: string; 
+  type: string;
 }
 
 interface Plugin {
+  priority?: number;
   register(store: Store): void;
+}
+
+const DatabaseEntity = entity<Database>('Database');
+
+const DatabasePluginEntity = entity<DatabasePluginMetadata>('DatabasePlugins');
+
+type DatabaseConstructor = { new (): Database };
+
+interface DatabasePluginMetadata {
+  priority: number;
+  impl: DatabaseConstructor;
+  type: string;
+}
+
+class DatabasePlugin implements Database {
+  static priority = 0;
+  static type: string;
+
+  get type() {
+    return (this.constructor as typeof DatabasePlugin).type as string;
+  }
+
+  static register(store: Store) {
+    if (!this.type) throw new Error('A type is required');
+    store.add(this as unknown as DatabaseConstructor);
+
+    store.use(DatabasePluginEntity(this.type), {
+      type: this.type,
+      impl: this as unknown as DatabaseConstructor,
+      priority: this.priority,
+    });
+  }
+}
+
+class MockDatabase extends DatabasePlugin {
+  static priority = 0;
+  static type = 'MOCK';
+}
+
+class SQLDatabase extends DatabasePlugin {
+  static priority = 1000;
+  static type = 'SQL';
+}
+
+class NOSQLDatabase extends DatabasePlugin {
+  static priority = 100;
+  static type = 'NOSQL';
+}
+
+function resolvePreferedDatabase(cx: Context) {
+  const availabledDatabases = cx.getAll(DatabasePluginEntity);
+
+  const sorted = Array.from(availabledDatabases.values()).sort(
+    (a, b) => b.priority - a.priority
+  );
+
+  const preferedDatabase = sorted.shift();
+
+  if (preferedDatabase === undefined)
+    throw new Error('no database implementation found');
+
+  return cx.get(preferedDatabase.impl);
 }
 
 class App {
   static defaultPlugins: Plugin[] = [MockDatabase];
-  static defaultConfig: AppConfig = { dbUrl: "..." };
   cx: Context;
 
   constructor(plugins: Plugin[] = []) {
     const store = new Store();
 
-    store.insert(AppConfigEntity, App.defaultConfig);
-
     const allPlugins: Plugin[] = [...App.defaultPlugins, ...plugins];
+
+    store.use(DatabaseEntity, resolvePreferedDatabase);
 
     for (const plugin of allPlugins) {
       plugin.register(store);
@@ -384,8 +446,8 @@ class App {
   }
 }
 
-console.log(new App().database.type);  // Output: MOCK
-console.log(new App([SqlDatabase]).database.type);  // Output: SQL
+console.log(new App().database.type); // Output: MOCK
+console.log(new App([SQLDatabase, NOSQLDatabase]).database.type); // Output: SQL
 ```
 
 In this example, plugins like `MockDatabase`, `SqlDatabase`, and `NoSqlDatabase` are dynamically registered and resolved by the store, making the app flexible and extendable.

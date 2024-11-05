@@ -1,5 +1,5 @@
 export { Store, scope } from './store';
-export { entity } from './entity';
+export { entity, normalizeEntityIdentifier } from './entity';
 export {
   Context,
   BaseContext,
