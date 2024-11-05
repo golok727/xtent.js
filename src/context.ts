@@ -143,23 +143,21 @@ class Resolver extends Context {
     for (const e of exclude) entFactories.delete(e);
 
     for (const [variant, createEntity] of entFactories) {
-      const created = this.context.pool.getOrInsert(
-        { kind: ent.kind, variant } as Entity<T>,
-        () => {
-          const next = this.next(ent);
-          try {
-            return createEntity(next);
-          } catch (err) {
-            if (err instanceof EntityNotFoundError) {
-              throw new MissingDependencyError(err.ent, {
-                kind: ent.kind,
-                variant,
-              } as Entity<T>);
-            }
-            throw err;
+      const toCreateEnt = { kind: ent.kind, variant } as Entity<T>;
+      const created = this.context.pool.getOrInsert(toCreateEnt, () => {
+        const next = this.next(toCreateEnt);
+        try {
+          return createEntity(next);
+        } catch (err) {
+          if (err instanceof EntityNotFoundError) {
+            throw new MissingDependencyError(err.ent, {
+              kind: ent.kind,
+              variant,
+            } as Entity<T>);
           }
+          throw err;
         }
-      );
+      });
       res.set(variant, created);
     }
 

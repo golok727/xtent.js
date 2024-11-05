@@ -10,8 +10,8 @@ import type {
   EntityKind,
   EntityLike,
   EntityScope,
+  EntityType,
   EntityVariant,
-  InferEntityType,
 } from './types';
 import { buildFactoryFunction } from './utils';
 
@@ -147,7 +147,7 @@ class EditStore {
       | EntityFactoryFn<Interface>
       | Interface
       | AnyAbstractConstructor<Interface>,
-    Interface = InferEntityType<E>,
+    Interface = EntityType<E>,
     D extends Item extends AnyAbstractConstructor<Interface>
       ? Dependencies<ConstructorParameters<Item>>
       : [] = Item extends AnyAbstractConstructor<Interface>
@@ -174,7 +174,7 @@ class EditStore {
       | EntityFactoryFn<Interface>
       | Interface
       | AnyAbstractConstructor<Interface>,
-    Interface = InferEntityType<E>,
+    Interface = EntityType<E>,
     D extends Item extends AnyAbstractConstructor<Interface>
       ? Dependencies<ConstructorParameters<Item>>
       : [] = Item extends AnyAbstractConstructor<Interface>

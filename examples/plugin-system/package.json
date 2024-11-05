@@ -2,13 +2,10 @@
   "name": "plugin-system",
   "module": "index.ts",
   "type": "module",
-  "devDependencies": {
-    "@types/bun": "latest"
-  },
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "xtent.js": "^1.0.3"
+    "xtent.js": "^1.0.4"
   }
 }

@@ -1,0 +1,6 @@
+
+import cli from "cli"; 
+const cli = new Cli();
+cli.command("hello", () => {console.log("Hello")}); 
+cli.parse(); 
+

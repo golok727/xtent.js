@@ -21,7 +21,7 @@ export type Entity<T> = {
 
 export type EntityLike<T> = AnyAbstractConstructor<T> | Entity<T>;
 
-export type InferEntityType<T> = T extends Entity<infer V>
+export type EntityType<T> = T extends Entity<infer V>
   ? V
   : T extends AnyAbstractConstructor<infer V>
     ? V

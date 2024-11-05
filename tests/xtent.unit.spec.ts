@@ -8,7 +8,7 @@ import {
 } from '../src';
 import { CircularDependencyError } from '../src/context';
 import { isEntityIdentifier } from '../src/entity';
-import type { InferEntityType } from '../src/types';
+import type { EntityType } from '../src/types';
 
 export const AnySystem = entity<System>('System');
 export const ContextSystemId = AnySystem('ContextSystem');
@@ -91,7 +91,7 @@ describe('Store', () => {
     expect(variant.variant).toBe('variant');
   });
 
-  describe('A code transformer', () => {
+  describe('Code transformer example', () => {
     interface Config {
       name: string;
       outDir: string;
@@ -102,8 +102,7 @@ describe('Store', () => {
       register(store: Store): void;
     }
 
-    const TransformerConfig = entity<Config>('BundlerConfig');
-    const ExtendConfig = entity<Partial<Config>>('ExtendConfig');
+    const TransformerConfig = entity<Config>('TransformerConfig');
 
     const InputTransformer = entity<{ transform(input: string): string }>(
       'InputTransformer'
@@ -113,14 +112,14 @@ describe('Store', () => {
     function ConfigPlugin(config: Partial<Config>): Plugin {
       return {
         register(store) {
-          store.insert(ExtendConfig(`c-${key++}`), config);
+          store.insert(TransformerConfig(`c-${key++}`), config);
         },
       };
     }
 
     function TransformerPlugin(
       name: string,
-      transformer: InferEntityType<typeof InputTransformer>
+      transformer: EntityType<typeof InputTransformer>
     ): Plugin {
       return {
         register(store) {
@@ -141,7 +140,10 @@ describe('Store', () => {
       store.use(TransformerConfig, cx => {
         let mergedConfig = defaultConfig;
 
-        const allConfig = cx.getAll(ExtendConfig);
+        const allConfig = cx.getAll(TransformerConfig, {
+          // exclude the default variant to avoid circular dependency
+          exclude: [TransformerConfig.variant],
+        });
 
         for (const c of allConfig.values()) {
           mergedConfig = mergeDeep(mergedConfig, c) as Config;
@@ -230,72 +232,6 @@ import {hello} from "thing"
     });
   });
 
-  describe('Plugin systems', () => {
-    interface Database {
-      type: string;
-    }
-
-    const AnyDatabase = entity<Database>('AnyDatabase');
-
-    abstract class DatabasePlugin implements Database {
-      abstract type: string;
-
-      static register(store: Store) {
-        store.add(this as unknown as { new (): Database });
-        store.override(AnyDatabase, cx => cx.get(this));
-      }
-    }
-
-    class MockDatabase extends DatabasePlugin {
-      type = 'MOCK';
-    }
-
-    class SqlDatabase extends DatabasePlugin {
-      type = 'SQL';
-    }
-
-    class NoSqlDatabase extends DatabasePlugin {
-      type = 'NOSQL';
-    }
-
-    interface Plugin {
-      register(store: Store): void;
-    }
-
-    class App {
-      static defaultPlugins: Plugin[] = [MockDatabase];
-
-      cx: Context;
-
-      constructor(plugins: Plugin[] = []) {
-        const store = new Store();
-
-        const allPlugins: Plugin[] = [...App.defaultPlugins, ...plugins];
-
-        for (const plugin of allPlugins) {
-          plugin.register(store);
-        }
-
-        this.cx = store.context();
-      }
-
-      get database() {
-        return this.cx.get(AnyDatabase);
-      }
-    }
-
-    test('should default to mock database', () => {
-      expect(new App().database.type).toEqual('MOCK');
-    });
-
-    test('use a another database', () => {
-      expect(new App([NoSqlDatabase]).database.type).toEqual('NOSQL');
-      expect(new App([NoSqlDatabase, SqlDatabase]).database.type).toEqual(
-        'SQL'
-      );
-    });
-  });
-
   describe('Store.use', () => {
     interface KeyBinding {
       key: string;
@@ -318,12 +254,14 @@ import {hello} from "thing"
       const store = new Store();
       const Binding = entity<KeyBinding>('binding');
       const Thing = entity<number>('a');
+
       store.use(Binding('ctrl+s'), cx => ({
         key: 'ctrl+s',
         action: () => cx.get(Editor).save(),
       }));
 
       store.add(Editor, [[Binding]]);
+
       store.use(Binding('asd'), cx => ({
         action: () => {
           console.log(cx.get(Thing));
@@ -338,6 +276,29 @@ import {hello} from "thing"
       expect(editor.hasChanges).toBe(true);
       editor.keyDown('ctrl+s');
       expect(editor.hasChanges).toBe(false);
+    });
+
+    test('pass functions into use', () => {
+      const store = new Store();
+
+      const a = entity<unknown>('a');
+      const b = entity<unknown>('b');
+
+      const another = (cx: Context) => {
+        expect(cx).toBeDefined();
+      };
+
+      function thing(cx: Context) {
+        expect(cx).toBeDefined();
+      }
+
+      store.use(a, thing);
+      store.use(b, another);
+
+      const cx = store.context();
+
+      cx.get(a);
+      cx.get(b);
     });
   });
 

@@ -5,7 +5,7 @@ export function isConstructor(v: unknown) {
   try {
     Reflect.construct(
       function () {
-        /* NOOP*/
+        /* NOOP */
       },
       [],
       v as never
@@ -21,11 +21,11 @@ export function buildFactoryFunction(
   dependencies: Any[] = []
 ): EntityFactoryFn<Any> {
   return (cx: Context) => {
-    //c
     const args = [] as Any[];
     for (const dependency of dependencies) {
       let arrayPattern;
       let ent;
+
       if (Array.isArray(dependency)) {
         if (dependency.length !== 1) {
           throw new Error(
@@ -46,10 +46,10 @@ export function buildFactoryFunction(
     }
 
     if (isConstructor(cstr)) {
-      return new cstr(...args);
+      return new cstr(...args, cx);
     } else {
       // todo allow (cx ,...deps) => T
-      return cstr(cx);
+      return cstr(...args, cx);
     }
   };
 }

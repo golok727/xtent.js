@@ -6,6 +6,7 @@ export {
   MissingDependencyError,
   EntityNotFoundError,
 } from './context';
+
 export type {
   Entity,
   EntityFactoryFn,
@@ -13,5 +14,6 @@ export type {
   EntityLike,
   EntityKind,
   AnyAbstractConstructor,
+  EntityType,
   EntityVariant,
 } from './types';
