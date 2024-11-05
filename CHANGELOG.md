@@ -1,5 +1,15 @@
 # xtent.js
 
+## 1.0.4
+
+### Patch Changes
+
+- 331b82c: Added exclude in Context.getAll
+  ## Other
+  - fix examples
+  - add more tests
+  - Add example
+
 ## 1.0.3
 
 ### Patch Changes
