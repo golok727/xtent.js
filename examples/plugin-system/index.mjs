@@ -1,20 +1,16 @@
 import {
-	type Plugin,
 	CodeTransformer,
 	LicensePlugin,
 	ShebangPlugin,
 	ConfigPlugin,
-} from "./lib";
+} from "./lib/lib.mjs";
 
-const plugins: Plugin[] = [
-	// merges all config together
+const plugins = [
 	ConfigPlugin({ name: "thing", outDir: "./mock/dist" }),
 	ConfigPlugin({
 		inputs: { index: "./mock/index.myjs" },
 	}),
 	ConfigPlugin({ inputs: { cli: "./mock/cli.myjs" } }),
-
-	// Transformation plugins
 	LicensePlugin("MIT License\n2024 Aadi"),
 	ShebangPlugin({ include: ["cli.myjs"] }),
 ];
