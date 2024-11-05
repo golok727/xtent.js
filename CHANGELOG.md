@@ -1,5 +1,17 @@
 # xtent.js
 
+## 1.0.5
+
+### Patch Changes
+
+- a3bfd38: more features
+  ## Other
+  - Added a plugin system with priority example
+  - update readme
+  - update readme
+  - update readme
+  - better example
+
 ## 1.0.4
 
 ### Patch Changes
