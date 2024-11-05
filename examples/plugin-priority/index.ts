@@ -1,4 +1,4 @@
-import { Store, entity, type Context } from 'xtent.js';
+import { type Context, Store, entity } from 'xtent.js';
 
 interface Database {
   type: string;

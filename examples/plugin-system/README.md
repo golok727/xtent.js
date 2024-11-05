@@ -6,3 +6,5 @@ bun run ./index.ts  # recommended
 # or run with node
 node  ./index.mjs
 ```
+
+now see the `./mock/dist` folder
