@@ -1,5 +1,13 @@
 # xtent.js
 
+## 1.0.9
+
+### Patch Changes
+
+- e12c225: added hashing for class constructors
+  ## Fix
+  - fix: hash constructors
+
 ## 1.0.8
 
 ### Patch Changes
