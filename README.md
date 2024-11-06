@@ -33,38 +33,49 @@ An entity is any construct (like a class, object, or factory) that you register 
 The `Store` is the central repository where entities are registered, stored, and managed. It allows you to define factories for creating instances of entities and ensures proper dependency injection. Additionally, the `Store` supports scoping, cloning, and context creation.
 
 ### 3. **Context**
-A `Context` is a snapshot of the store at a given point in time. It acts as the environment in which entity lookups and dependency resolutions are performed. Contexts can be nested, and each context is linked to a particular scope within the store.
+A `Context` acts as the environment in which entity lookups and dependency resolutions are performed. Contexts can be nested, and each context is linked to a particular scope within the store.
 
 ---
 
 Also see [Plugin System Example](./examples/plugin-system)
+Also see [Plugins With Priority](./examples/plugin-priority)
 
 
-## Store API Overview
+## Basic Store API Overview
 
-### 1. `Store.add()`
-This method registers an entity or a class-based factory function to the store. You can specify dependencies that need to be injected into the entity's constructor.
+### 1. `Store.add(ClassConstructor, ...dependencies: ConstructorParameters<ClassConstructor>)`
+- Adds a class as a factory method to the store, optionally providing dependencies that will be injected into the constructor.
 
 **Example:**
 ```ts
+interface Config {
+    width: number; 
+    height: number; 
+}
+
+const RendererConfig = entity<Config>("RendererConfig");
+
 class Renderer {
-  constructor() {
+  constructor(public config: Config) {
     // Initialization code
   }
   
   render() {
-    console.log("Rendering...")
+    const {width , height} = this.config
+    console.log(`Rendering... width = ${width}, height = ${height}`)
   }
 }
 
-store.add(Renderer);  // Adds the Renderer class as a factory to the store
+const store = new Store(); 
+store.add(Renderer, [RendererConfig]);  // Adds the Renderer class as a factory to the store and the config as a dependency
+store.insert(RendererConfig, { width: 800 , height: 600 }) // insert a resolved value
 
 const cx = store.context();
 const renderer = cx.get(Renderer);
-renderer.render();  // Output: Rendering...
+renderer.render();  // Output: Rendering... width=800, height=600
 ```
 
-### 2. `Store.insert()`
+### 2. `Store.insert<T>(EntityLike<T>, value: T)`
 Registers an already existing entity or object directly into the store.
 
 ```ts
@@ -82,49 +93,9 @@ const appConfig = cx.get(AppConfigEntity);
 console.log(appConfig.dbUrl);  // Output: "database_url"
 ```
 
-### 3. `Store.get()`
-Resolves an entity by its type or identifier from the current store. This method constructs the entity if it hasn't been created yet.
+# Advanced entity registration with Store
 
-```ts
-const renderer = cx.get(Renderer);  // Resolves the Renderer entity
-```
-
-### 4. `Store.getAll()`
-Fetches all available variants of a particular entity.
-
-```ts
-const databases = cx.getAll(DatabaseEntity);  // Returns all available database variants
-```
-
----
-
-## Scoped Entities
-
-Entities can be registered and resolved within different **scopes**. Scopes allow for grouping or isolating entities for better modularity and reusability. By default, all entities are registered within the root scope (`STORE_ROOT_SCOPE`), but you can create custom scopes for more fine-grained control.
-
-### Example of Scoping:
-
-```ts
-const customScope = scope("custom-scope");
-
-store.scope(customScope).add(Renderer);
-const customCx = store.context(customScope);
-
-const renderer = customCx.get(Renderer);  // Resolves the Renderer entity within the custom scope
-```
-
----
-
-## Advanced Entity Registration
-
-
-```ts
-const customScope = scope("custom-scope");
-store.scope(customScope).add(Renderer);
-```
-
-#### 1. `add(Class, ...dependencies)`
-- Adds a class as a factory method to the store, optionally providing dependencies that will be injected into the constructor.
+### 1. `Store.add(ClassConstructor, ...dependencies: ConstructorParameters<ClassConstructor>)`
 
 ```ts
 type RendererConfig = {width: number, height: number, antialias: boolean};
@@ -145,7 +116,6 @@ const ConfigEntity = entity<Config>("Config");
 const SystemEntity = entity<System>("System");
 const PipelineEntity = entity<Pipeline>("Pipeline");
 
-const Rendeer
 class Renderer {
   constructor(public config: RendererConfig, public systems: System[], public pipes: Pipeline[])
 }
@@ -161,24 +131,81 @@ store.insert(SystemEntity("GraphicsSystem"), GraphicsSystemImpl)
 store.insert(PinelineEntity("GraphicsPipe"), GraphicsPipeImpl)
 
 store.get(Renderer).config.width === 800 // true
-store.get(Renderer).config.width === 600// true
-store.get(Renderer).systems.length === 2// true
-store.get(Renderer).pipes.length === 1// true
+store.get(Renderer).config.width === 600 // true
+store.get(Renderer).systems.length === 2 // true
+store.get(Renderer).pipes.length === 1 // true
 
 ```
 
-#### 2. `use(Entity, implementation, ...dependencies)`
+#### 2. `Store.use()`
 - Registers an implementation of an entity, either as an object, a class, or a factory function. This method also allows for injecting dependencies into the implementation.
+- Throws an error if a implementation already exists. If you want to override please use `Store.override`
 
+*Signatures*
 ```ts
-store.use(DatabaseEntity, SqlDatabase, [AppConfigEntity]);
+store.use<T>(Entity<T>, T);
+// or
+store.use<T>(Entity<T>, (cx: Context) => T);
+// or 
+store.use<T>(Entity<T>, AnyConstructor<T>, [...deps]);
 ```
+
+
+- *Example*  `store.use<T>(Entity<T>, T)`
+```ts
+store.use(ConfigEntity, { databaseUrl: "http://mydb.localhost:5757", dbName="thing" })
+
+store.context().get(ConfigEntity) // { databaseUrl: "http://mydb.localhost:5757", dbName="thing" }
+```
+
+- *Example* `store.use<T>(Entity<T>, AnyConstructor<T>, [...deps])`
+```ts
+interface Config { databaseUrl: string, ... }
+
+const DatabaseEntitiy = entity<Database>("Database")
+
+const ConfigEntity= entity<Database>("Config")
+
+interface Database { ... }
+
+class MockDatabase implements Database { ... }
+
+class SqlDatabse implements Database { ... }
+
+// use SqlDatabase as the default variant
+store.use(DatabaseEntity, SqlDatabase, [ConfigEntity]);
+
+// resolve default variant
+store.context().get(DatbaseEntity) instanceof SqlDatabase // true 
+```
+
+- *Example*  `store.use<T>(Entity<T>, T)`
+```ts
+// register a dev variant 
+store.use(DatbaseEntity("dev"), MockDatabase, [ConfigEntity])
+// register a prod variant
+store.use(DatbaseEntity("prod"), SqlDatabase, [ConfigEntity])
+
+// register default variant
+store.use(DatabaseEntity, (cx) => process.env.DEV ? cx.get(DatabaseEntity("dev")) : cx.get(DatabaseEntity("prod")));
+
+
+store.context().get(DatabaseEnity) // if process.env.DEV { resolves MockDatabase } else { resolves SqlDatabase }
+
+```
+
 
 #### 3. `override(Entity, implementation, ...dependencies)`
-- Overrides an existing entity with a new implementation or factory function. This is useful when you want to replace the default behavior of an entity at runtime.
+- Overrides an existing entity with a new implementation or factory function. This is useful when you want to replace the default behavior of an entity at runtime
+- Functionality is same as `Store.use`
 
+*Signatures*
 ```ts
-store.override(DatabaseEntity, NoSqlDatabase, [AppConfigEntity]);
+store.override<T>(Entity<T>, T);
+// or
+store.override<T>(Entity<T>, (cx: Context) => T);
+// or 
+store.override<T>(Entity<T>, AnyConstructor<T>, [...deps]);
 ```
 
 
@@ -261,6 +288,23 @@ thing.run(); // In 'prod', no log; in 'dev', it logs "thing Item-1 Item-2"
 
 --- 
 
+## Scoped Entities
+
+Entities can be registered and resolved within different **scopes**. Scopes allow for grouping or isolating entities for better modularity and reusability. By default, all entities are registered within the root scope (`STORE_ROOT_SCOPE`), but you can create custom scopes for more fine-grained control.
+
+### Example of Scoping:
+
+```ts
+const customScope = scope("custom-scope");
+
+store.scope(customScope).add(Renderer);
+const customCx = store.context(customScope);
+
+const renderer = customCx.get(Renderer);  // Resolves the Renderer entity within the custom scope
+```
+
+---
+
 
 ## Context Class
 
@@ -289,6 +333,7 @@ const instance = context.get(entity, options);
   - `options`: Optional configuration for resolution.
 
 - **Returns**: The resolved entity instance.
+- **Errors**: `EntityNotFoundError`, `MissingDependencyError`, `CircularDependencyError`
 
 #### `getAll`
 
@@ -303,6 +348,7 @@ const instances = context.getAll(entity, options);
   - `options`: Optional configuration for resolution.
 
 - **Returns**: A `Map` of entity variants to their resolved instances.
+- **Errors**:  `MissingDependencyError`, `CircularDependencyError`
 
 #### `getOptional`
 
@@ -317,21 +363,34 @@ const instance = context.getOptional(entity, options);
   - `options`: Optional configuration for resolution.
 
 - **Returns**: The resolved entity instance or `null`.
+- **Errors**:  `MissingDependencyError`, `CircularDependencyError`
 
 ### Example Usage
 
 ```javascript
-// Create a new context
-const context = new BaseContext(store, 'myScope', null);
+class Thing {
+  a = 10, 
+  b = 10,
+}
 
-// Resolve an instance of MyEntity
-const myEntityInstance = context.get(MyEntity);
-console.log(myEntityInstance);
+const store = new Store();
+store.add(Thing);
 
-// Resolve all instances of an entity type
-const allInstances = context.getAll(MyEntity);
-console.log(allInstances);
+const cx = store.context(); 
+const thing = cx.get(Thing)
+
+thing.a === 10 // true
+thig.b === 10 // true
+
+thing === cx.get(Thing) // true
+
+const cx2 = store.context();
+
+thing === cx2.get(Thing) // false
+
 ```
+The context always caches the result. This means that once the `Thing` instance is retrieved from a context, the same instance will be returned every time within that same context. A new instance of Thing will only be created when a new context is generated.
+So, if you need another instance of Thing, simply create a new context.
 
 ## Error Handling
 
@@ -345,7 +404,8 @@ The following errors may be thrown during entity resolution:
 
 ---
 
-## Example: [Plugin System](./examples/plugin-priority)
+## Example: [Plugin System](./examples/plugin-system)
+## Example: [Plugin System With priority](./examples/plugin-priority)
 
 Here’s an example of how `xtent.js` can be used to implement a plugin-based system with priority.
 
