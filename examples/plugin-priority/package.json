@@ -1,14 +1,14 @@
 {
   "name": "plugin-priority",
   "module": "index.ts",
-  "type": "module",
   "devDependencies": {
     "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
+  "type": "module",
   "dependencies": {
-    "xtent.js": "^1.0.4"
+    "xtent.js": "^1.0.8"
   }
 }
