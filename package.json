@@ -1,7 +1,7 @@
 {
   "name": "xtent.js",
   "repository": "https://github.com/golok727/xtent.js",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "A extension system for javascript",
   "author": "golok727",
   "license": "MIT",
@@ -14,7 +14,10 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": ["dist", "src"],
+  "files": [
+    "dist",
+    "src"
+  ],
   "scripts": {
     "lint": "biome lint --write",
     "build": "pnpm type-check && pkgroll --minify",
