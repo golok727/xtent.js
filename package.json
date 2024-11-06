@@ -14,10 +14,7 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": [
-    "dist",
-    "src"
-  ],
+  "files": ["dist", "src"],
   "scripts": {
     "lint": "biome lint --write",
     "build": "pnpm type-check && pkgroll --minify",
@@ -36,7 +33,18 @@
   },
   "keywords": [
     "extension-system",
-    "plugins"
+    "plugins",
+    "plugin-system",
+    "ioc",
+    "ioc-container",
+    "dependency-injection",
+    "dependency-injection-container",
+    "typescript-ioc",
+    "javascript-ioc",
+    "container",
+    "inversion-of-control",
+    "di",
+    "entity"
   ],
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

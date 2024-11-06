@@ -16,10 +16,20 @@ This library provides a lightweight and flexible dependency injection system for
 
 ## Installation
 
-Install the package using npm:
+Install the package using using your preferred package manager:
 
 ```bash
+# npm
 npm install xtent.js
+
+# yarn 
+yarn add xtent.js
+
+#pnpm
+pnpm add xtent.js
+
+# bun
+bun add xtent.js
 ```
 
 ---
@@ -37,13 +47,14 @@ A `Context` acts as the environment in which entity lookups and dependency resol
 
 ---
 
-Also see [Plugin System Example](./examples/plugin-system)
-Also see [Plugins With Priority](./examples/plugin-priority)
+## Examples 
+- [Plugin System Example](./examples/plugin-system)
+- [Plugins With Priority](./examples/plugin-priority)
 
 
 ## Basic Store API Overview
 
-### 1. `Store.add(ClassConstructor, ...dependencies: ConstructorParameters<ClassConstructor>)`
+#### 1. `Store.add(ClassConstructor, ...dependencies: ConstructorParameters<ClassConstructor>)`
 - Adds a class as a factory method to the store, optionally providing dependencies that will be injected into the constructor.
 
 **Example:**
@@ -75,7 +86,7 @@ const renderer = cx.get(Renderer);
 renderer.render();  // Output: Rendering... width=800, height=600
 ```
 
-### 2. `Store.insert<T>(EntityLike<T>, value: T)`
+#### 2. `Store.insert<T>(EntityLike<T>, value: T)`
 Registers an already existing entity or object directly into the store.
 
 ```ts
@@ -93,9 +104,9 @@ const appConfig = cx.get(AppConfigEntity);
 console.log(appConfig.dbUrl);  // Output: "database_url"
 ```
 
-# Advanced entity registration with Store
+## Advanced entity registration with Store
 
-### 1. `Store.add(ClassConstructor, ...dependencies: ConstructorParameters<ClassConstructor>)`
+#### 1. `Store.add(ClassConstructor, ...dependencies: ConstructorParameters<ClassConstructor>)`
 
 ```ts
 type RendererConfig = {width: number, height: number, antialias: boolean};
@@ -158,6 +169,21 @@ store.use(ConfigEntity, { databaseUrl: "http://mydb.localhost:5757", dbName="thi
 store.context().get(ConfigEntity) // { databaseUrl: "http://mydb.localhost:5757", dbName="thing" }
 ```
 
+- *Example*  `store.use<T>(Entity<T>, (cx: Context) => T)`
+```ts
+// register a dev variant 
+store.use(DatbaseEntity("dev"), MockDatabase, [ConfigEntity])
+// register a prod variant
+store.use(DatbaseEntity("prod"), SqlDatabase, [ConfigEntity])
+
+// register default variant
+store.use(DatabaseEntity, (cx) => process.env.DEV ? cx.get(DatabaseEntity("dev")) : cx.get(DatabaseEntity("prod")));
+
+
+store.context().get(DatabaseEnity) // if process.env.DEV { resolves MockDatabase } else { resolves SqlDatabase }
+
+```
+
 - *Example* `store.use<T>(Entity<T>, AnyConstructor<T>, [...deps])`
 ```ts
 interface Config { databaseUrl: string, ... }
@@ -179,20 +205,6 @@ store.use(DatabaseEntity, SqlDatabase, [ConfigEntity]);
 store.context().get(DatbaseEntity) instanceof SqlDatabase // true 
 ```
 
-- *Example*  `store.use<T>(Entity<T>, T)`
-```ts
-// register a dev variant 
-store.use(DatbaseEntity("dev"), MockDatabase, [ConfigEntity])
-// register a prod variant
-store.use(DatbaseEntity("prod"), SqlDatabase, [ConfigEntity])
-
-// register default variant
-store.use(DatabaseEntity, (cx) => process.env.DEV ? cx.get(DatabaseEntity("dev")) : cx.get(DatabaseEntity("prod")));
-
-
-store.context().get(DatabaseEnity) // if process.env.DEV { resolves MockDatabase } else { resolves SqlDatabase }
-
-```
 
 
 #### 3. `override(Entity, implementation, ...dependencies)`
@@ -306,7 +318,7 @@ const renderer = customCx.get(Renderer);  // Resolves the Renderer entity within
 ---
 
 
-## Context Class
+## Context
 
 ### Description
 
@@ -318,11 +330,55 @@ The `Context` class is responsible for resolving entities and managing their dep
 - **Optional Retrieval**: Supports fetching entities that may or may not exist.
 - **Entity Pooling**: Caches instances of resolved entities to avoid repeated instantiation.
 
+
+### Example Usage
+
+```javascript
+class Thing {
+  a = 10, 
+  b = 10,
+}
+
+class Language {
+  name = "javascript"
+}
+
+const store = new Store();
+store.add(Thing);
+
+// creates a new context with the snapshot of current state of the store
+const cx = store.context(); 
+
+store.add(Language) // will not be included in `cx`
+
+const thing = cx.get(Thing)
+
+thing.a === 10 // true
+thing.b === 10 // true
+
+// ERROR
+cx.get(Language) // throws an EntityNotFoundError as Language is added to store after the context creation
+
+
+thing === cx.get(Thing) // true
+
+const cx2 = store.context();
+
+thing === cx2.get(Thing) // false
+
+cx2.get(Language).name === "javascript" // true
+
+
+```
+The context always caches the result. This means that once the `Thing` instance is retrieved from a context, the same instance will be returned every time within that same context. A new instance of Thing will only be created when a new context is generated.
+So, if you need another instance of Thing, simply create a new context.
+
 ### Methods
 
 #### `get`
 
 Retrieves an instance of an entity, resolving its dependencies.
+
 
 ```javascript
 const instance = context.get(entity, options);
@@ -364,33 +420,6 @@ const instance = context.getOptional(entity, options);
 
 - **Returns**: The resolved entity instance or `null`.
 - **Errors**:  `MissingDependencyError`, `CircularDependencyError`
-
-### Example Usage
-
-```javascript
-class Thing {
-  a = 10, 
-  b = 10,
-}
-
-const store = new Store();
-store.add(Thing);
-
-const cx = store.context(); 
-const thing = cx.get(Thing)
-
-thing.a === 10 // true
-thig.b === 10 // true
-
-thing === cx.get(Thing) // true
-
-const cx2 = store.context();
-
-thing === cx2.get(Thing) // false
-
-```
-The context always caches the result. This means that once the `Thing` instance is retrieved from a context, the same instance will be returned every time within that same context. A new instance of Thing will only be created when a new context is generated.
-So, if you need another instance of Thing, simply create a new context.
 
 ## Error Handling
 
