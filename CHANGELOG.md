@@ -1,5 +1,12 @@
 # xtent.js
 
+## 1.0.8
+
+### Patch Changes
+
+- 7ba3268: ## Fix
+  - fix: doc
+
 ## 1.0.7
 
 ### Patch Changes
