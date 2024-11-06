@@ -1,5 +1,13 @@
 # xtent.js
 
+## 1.0.6
+
+### Patch Changes
+
+- 4150d0c: Readme
+  ## Other
+  - fix readme
+
 ## 1.0.5
 
 ### Patch Changes
