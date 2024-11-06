@@ -270,7 +270,7 @@ store.insert(ConfigEntity("prod"), { shouldLog: true });
 
 // Using a configuration entity based on the environment
 store.use(ConfigEntity /* default variant */, (cx) => 
-  process.env.dev ? ConfigEntity("dev") : ConfigEntity("prod")
+  process.env.dev ? cx.get(ConfigEntity("dev")) : cx.get(ConfigEntity("prod"))
 );
 
 // Inserting the Thing entity with its dependencies
