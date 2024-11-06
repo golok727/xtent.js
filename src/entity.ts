@@ -6,6 +6,20 @@ import type {
   EntityVariant,
 } from './types';
 
+const table = new WeakMap<object, string>();
+let counter = 0;
+
+function hashConstructor(cstr: { name: string }) {
+  let result = table.get(cstr);
+  if (result) return result;
+
+  result = ++counter + '~' + cstr.name;
+
+  table.set(cstr, result);
+
+  return result;
+}
+
 // biome-ignore lint/suspicious/noExplicitAny: Thanks biome
 type Any = any;
 
@@ -40,9 +54,17 @@ export function normalizeEntityIdentifier<T>(ent: EntityLike<T>): Entity<T> {
 export function createEntityFromConstructor<T>(
   cstr: AnyAbstractConstructor<T>
 ) {
-  return entity<T>(`${cstr.name}`);
+  return entity<T>(`${cstr.name}${hashConstructor(cstr)}`);
 }
 
 export function stringifyEntity<T>(ent: Entity<T>) {
   return `Entity(${ent.kind}::${ent.variant})`;
+}
+
+export function entityIsEqual(a: Entity<unknown>, b: Entity<unknown>): boolean {
+  return a.kind == b.kind && a.variant === b.variant;
+}
+
+export function isVariantOf(entity: Entity<unknown>, variant: Entity<unknown>) {
+  return entity.kind === variant.kind;
 }
